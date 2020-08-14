@@ -23,7 +23,10 @@
 package no.nordicsemi.android.blinky;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.hardware.SensorEvent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -31,8 +34,18 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+
+import java.nio.ByteBuffer;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -49,6 +62,10 @@ public class BlinkyActivity extends AppCompatActivity {
 
 	@BindView(R.id.led_switch) SwitchMaterial led;
 	@BindView(R.id.button_state) TextView buttonState;
+
+	private LineChart mChart;
+	private Thread thread;
+	private boolean plotData = true;
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -112,9 +129,159 @@ public class BlinkyActivity extends AppCompatActivity {
 			ledState.setText(isOn ? R.string.turn_on : R.string.turn_off);
 			led.setChecked(isOn);
 		});
-		viewModel.getButtonState().observe(this,
-				pressed -> buttonState.setText(pressed ?
-						R.string.button_pressed : R.string.button_released));
+//		viewModel.getButtonState().observe(this,
+//				pressed -> buttonState.setText(pressed ?
+//						R.string.button_pressed : R.string.button_released));
+
+		viewModel.getRxState().observe(this,
+				rxData -> {
+					if(plotData){
+
+//						for(int i = 0 ; i < rxData.length; i++)
+//						Log.i("rxTag", String.format("%02X ", ByteBuffer.wrap(rxData).getInt()));
+						Log.i("rxTag", String.valueOf((float)ByteBuffer.wrap(rxData).getInt()) );
+//						System.out.println(ByteBuffer.wrap(rxData).getFloat());
+
+						addEntry(rxData);
+
+//						Log.i("rxTag", ByteBuffer.wrap(rxData).getInt());
+
+						plotData = false;
+					}
+				});
+
+		mChart = (LineChart) findViewById(R.id.chart1);
+
+		// enable description text
+		mChart.getDescription().setEnabled(true);
+
+		// enable touch gestures
+		mChart.setTouchEnabled(true);
+
+		// enable scaling and dragging
+		mChart.setDragEnabled(true);
+		mChart.setScaleEnabled(true);
+		mChart.setDrawGridBackground(false);
+
+		// if disabled, scaling can be done on x- and y-axis separately
+		mChart.setPinchZoom(true);
+
+		// set an alternative background color
+		mChart.setBackgroundColor(Color.WHITE);
+
+		LineData data = new LineData();
+		data.setValueTextColor(Color.BLACK);
+		data.setDrawValues(false);
+		// add empty data
+		mChart.setData(data);
+
+		// get the legend (only possible after setting data)
+		Legend l = mChart.getLegend();
+
+		// modify the legend ...
+		l.setForm(Legend.LegendForm.LINE);
+		l.setTextColor(Color.WHITE);
+
+		XAxis xl = mChart.getXAxis();
+		xl.setTextColor(Color.WHITE);
+		xl.setDrawGridLines(true);
+		xl.setAvoidFirstLastClipping(true);
+		xl.setEnabled(true);
+
+		YAxis leftAxis = mChart.getAxisLeft();
+		leftAxis.setTextColor(Color.BLACK);
+		leftAxis.setDrawGridLines(false);
+		leftAxis.setAxisMaximum(10f);
+		leftAxis.setAxisMinimum(0f);
+		leftAxis.setDrawGridLines(true);
+
+		YAxis rightAxis = mChart.getAxisRight();
+		rightAxis.setEnabled(false);
+
+		mChart.getAxisLeft().setDrawGridLines(true);
+		mChart.getXAxis().setDrawGridLines(false);
+		mChart.setDrawBorders(false);
+
+		feedMultiple();
+
+	}
+
+
+	private void addEntry(byte[] rxData) {
+
+		LineData data = mChart.getData();
+
+		if (data != null) {
+
+			ILineDataSet set = data.getDataSetByIndex(0);
+			// set.addEntry(...); // can be called as well
+
+			if (set == null) {
+				set = createSet();
+				data.addDataSet(set);
+			}
+			float tmp = (float)ByteBuffer.wrap(rxData).getInt();
+
+			if (0.9f * tmp < mChart.getAxisLeft().getAxisMinimum())
+				mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
+
+			if (1.1f * tmp > mChart.getAxisLeft().getAxisMaximum())
+				mChart.getAxisLeft().setAxisMaximum(1.1f * tmp);
+
+			data.addEntry(new Entry(set.getEntryCount(),  tmp), 0);
+			data.notifyDataChanged();
+
+			// let the chart know it's data has changed
+			mChart.notifyDataSetChanged();
+
+			// limit the number of visible entries
+			mChart.setVisibleXRangeMaximum(150);
+			// mChart.setVisibleYRange(30, AxisDependency.LEFT);
+
+			// move to the latest entry
+			mChart.moveViewToX(data.getEntryCount());
+		}
+	}
+
+	private LineDataSet createSet() {
+
+		LineDataSet set = new LineDataSet(null, "Dynamic Data");
+		set.setAxisDependency(YAxis.AxisDependency.LEFT);
+		set.setLineWidth(3f);
+		set.setColor(Color.MAGENTA);
+		set.setHighlightEnabled(false);
+		set.setDrawValues(false);
+		set.setDrawCircles(false);
+		set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+		set.setCubicIntensity(0.2f);
+		return set;
+	}
+
+	private void feedMultiple() {
+
+		if (thread != null){
+			thread.interrupt();
+		}
+
+		thread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				while (true){
+					plotData = true;
+					try {
+						Thread.sleep(10
+
+						);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		});
+
+		thread.start();
 	}
 
 	@OnClick(R.id.action_clear_cache)

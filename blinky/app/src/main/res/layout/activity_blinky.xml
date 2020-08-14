@@ -161,6 +161,21 @@
 						app:layout_constraintRight_toRightOf="parent" />
 				</androidx.constraintlayout.widget.ConstraintLayout>
 			</com.google.android.material.card.MaterialCardView>
+
+			<com.google.android.material.card.MaterialCardView
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/activity_horizontal_margin">
+
+				<com.github.mikephil.charting.charts.LineChart
+					android:id="@+id/chart1"
+					android:layout_width="match_parent"
+					android:layout_height="200dp"
+					tools:layout_editor_absoluteX="8dp"
+					tools:layout_editor_absoluteY="0dp" />
+
+			</com.google.android.material.card.MaterialCardView>
+
 		</LinearLayout>
 	</ScrollView>
 

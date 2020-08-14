@@ -32,6 +32,10 @@ android {
     }
 }
 
+repositories {
+    maven { url "https://jitpack.io" }
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.1.0'
@@ -54,4 +58,7 @@ dependencies {
     // To add BLE Library as a module, replace the above dependency with the following
     // and uncomment 2 lines in settings.gradle file.
     // implementation project(":ble-livedata")
+
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.0.2'
+
 }

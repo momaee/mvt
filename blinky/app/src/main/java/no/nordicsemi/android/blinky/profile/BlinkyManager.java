@@ -38,7 +38,7 @@ import java.util.UUID;
 
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.livedata.ObservableBleManager;
-import no.nordicsemi.android.blinky.profile.callback.BlinkyButtonDataCallback;
+import no.nordicsemi.android.blinky.profile.callback.BlinkyRxDataCallback;
 import no.nordicsemi.android.blinky.profile.callback.BlinkyLedDataCallback;
 import no.nordicsemi.android.blinky.profile.data.BlinkyLED;
 import no.nordicsemi.android.log.LogContract;
@@ -47,16 +47,19 @@ import no.nordicsemi.android.log.Logger;
 
 public class BlinkyManager extends ObservableBleManager {
 	/** Nordic Blinky Service UUID. */
-	public final static UUID LBS_UUID_SERVICE = UUID.fromString("00001523-1212-efde-1523-785feabcd123");
+//	public final static UUID LBS_UUID_SERVICE = UUID.fromString("00001523-1212-efde-1523-785feabcd123");
+	public final static UUID LBS_UUID_SERVICE = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
 	/** BUTTON characteristic UUID. */
-	private final static UUID LBS_UUID_BUTTON_CHAR = UUID.fromString("00001524-1212-efde-1523-785feabcd123");
+//	private final static UUID LBS_UUID_BUTTON_CHAR = UUID.fromString("00001524-1212-efde-1523-785feabcd123");
+	private final static UUID LBS_UUID_RX_CHAR = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
 	/** LED characteristic UUID. */
-	private final static UUID LBS_UUID_LED_CHAR = UUID.fromString("00001525-1212-efde-1523-785feabcd123");
+//	private final static UUID LBS_UUID_LED_CHAR = UUID.fromString("00001525-1212-efde-1523-785feabcd123");
+	private final static UUID LBS_UUID_LED_CHAR = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
 
 	private final MutableLiveData<Boolean> ledState = new MutableLiveData<>();
-	private final MutableLiveData<Boolean> buttonState = new MutableLiveData<>();
+	private final MutableLiveData<byte[]> rxState = new MutableLiveData<byte[]>();
 
-	private BluetoothGattCharacteristic buttonCharacteristic, ledCharacteristic;
+	private BluetoothGattCharacteristic rxCharacteristic, ledCharacteristic;
 	private LogSession logSession;
 	private boolean supported;
 	private boolean ledOn;
@@ -69,8 +72,8 @@ public class BlinkyManager extends ObservableBleManager {
 		return ledState;
 	}
 
-	public final LiveData<Boolean> getButtonState() {
-		return buttonState;
+	public final LiveData<byte[]> getRxState() {
+		return rxState;
 	}
 
 	@NonNull
@@ -103,16 +106,16 @@ public class BlinkyManager extends ObservableBleManager {
 	 * has been received, or its data was read.
 	 * <p>
 	 * If the data received are valid (single byte equal to 0x00 or 0x01), the
-	 * {@link BlinkyButtonDataCallback#onButtonStateChanged} will be called.
-	 * Otherwise, the {@link BlinkyButtonDataCallback#onInvalidDataReceived(BluetoothDevice, Data)}
+	 * {@link BlinkyRxDataCallback#onRxStateChanged} will be called.
+	 * Otherwise, the {@link BlinkyRxDataCallback#onInvalidDataReceived(BluetoothDevice, Data)}
 	 * will be called with the data received.
 	 */
-	private	final BlinkyButtonDataCallback buttonCallback = new BlinkyButtonDataCallback() {
+	private	final BlinkyRxDataCallback rxCallback = new BlinkyRxDataCallback() {
 		@Override
-		public void onButtonStateChanged(@NonNull final BluetoothDevice device,
-										 final boolean pressed) {
-			log(LogContract.Log.Level.APPLICATION, "Button " + (pressed ? "pressed" : "released"));
-			buttonState.setValue(pressed);
+		public void onRxStateChanged(@NonNull final BluetoothDevice device,
+										 final byte[] data) {
+			log(LogContract.Log.Level.APPLICATION, "Rx " + data.toString());
+			rxState.setValue(data);
 		}
 
 		@Override
@@ -156,17 +159,17 @@ public class BlinkyManager extends ObservableBleManager {
 	private class BlinkyBleManagerGattCallback extends BleManagerGattCallback {
 		@Override
 		protected void initialize() {
-			setNotificationCallback(buttonCharacteristic).with(buttonCallback);
+			setNotificationCallback(rxCharacteristic).with(rxCallback);
 			readCharacteristic(ledCharacteristic).with(ledCallback).enqueue();
-			readCharacteristic(buttonCharacteristic).with(buttonCallback).enqueue();
-			enableNotifications(buttonCharacteristic).enqueue();
+			readCharacteristic(rxCharacteristic).with(rxCallback).enqueue();
+			enableNotifications(rxCharacteristic).enqueue();
 		}
 
 		@Override
 		public boolean isRequiredServiceSupported(@NonNull final BluetoothGatt gatt) {
 			final BluetoothGattService service = gatt.getService(LBS_UUID_SERVICE);
 			if (service != null) {
-				buttonCharacteristic = service.getCharacteristic(LBS_UUID_BUTTON_CHAR);
+				rxCharacteristic = service.getCharacteristic(LBS_UUID_RX_CHAR);
 				ledCharacteristic = service.getCharacteristic(LBS_UUID_LED_CHAR);
 			}
 
@@ -176,13 +179,14 @@ public class BlinkyManager extends ObservableBleManager {
 				writeRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
 			}
 
-			supported = buttonCharacteristic != null && ledCharacteristic != null && writeRequest;
+//			supported = rxCharacteristic != null && ledCharacteristic != null && writeRequest;
+			supported = rxCharacteristic != null && ledCharacteristic != null;
 			return supported;
 		}
 
 		@Override
 		protected void onDeviceDisconnected() {
-			buttonCharacteristic = null;
+			rxCharacteristic = null;
 			ledCharacteristic = null;
 		}
 	}

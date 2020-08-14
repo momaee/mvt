@@ -71,7 +71,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mChart.setBackgroundColor(Color.WHITE);
 
         LineData data = new LineData();
-        data.setValueTextColor(Color.WHITE);
+        data.setValueTextColor(Color.BLACK);
+        data.setDrawValues(true);
 
         // add empty data
         mChart.setData(data);
@@ -90,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         xl.setEnabled(true);
 
         YAxis leftAxis = mChart.getAxisLeft();
-        leftAxis.setTextColor(Color.WHITE);
+        leftAxis.setTextColor(Color.BLACK);
         leftAxis.setDrawGridLines(false);
         leftAxis.setAxisMaximum(10f);
         leftAxis.setAxisMinimum(0f);
@@ -99,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         YAxis rightAxis = mChart.getAxisRight();
         rightAxis.setEnabled(false);
 
-        mChart.getAxisLeft().setDrawGridLines(false);
+        mChart.getAxisLeft().setDrawGridLines(true);
         mChart.getXAxis().setDrawGridLines(false);
         mChart.setDrawBorders(false);
 
