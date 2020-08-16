@@ -45,7 +45,10 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
+import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -53,6 +56,7 @@ import butterknife.OnClick;
 import no.nordicsemi.android.ble.livedata.state.ConnectionState;
 import no.nordicsemi.android.blinky.adapter.DiscoveredBluetoothDevice;
 import no.nordicsemi.android.blinky.viewmodels.BlinkyViewModel;
+import no.nordicsemi.android.blinky.viewmodels.SaveCSV;
 
 @SuppressWarnings("ConstantConditions")
 public class BlinkyActivity extends AppCompatActivity {
@@ -66,6 +70,13 @@ public class BlinkyActivity extends AppCompatActivity {
 	private LineChart mChart;
 	private Thread thread;
 	private boolean plotData = true;
+
+	String baseDir;
+	String fileName;
+	String filePath;
+	List<String[]> list;
+	File file;
+	SaveCSV sCSV;
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -149,6 +160,13 @@ public class BlinkyActivity extends AppCompatActivity {
 						plotData = false;
 					}
 				});
+
+		baseDir = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
+		fileName = "AnalysisData.csv";
+		filePath = baseDir + File.separator + fileName;
+		list = new ArrayList<String[]>();
+		file = new File(filePath);
+		sCSV = new SaveCSV(file);
 
 		mChart = (LineChart) findViewById(R.id.chart1);
 
@@ -240,6 +258,9 @@ public class BlinkyActivity extends AppCompatActivity {
 
 			// move to the latest entry
 			mChart.moveViewToX(data.getEntryCount());
+
+			String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(tmp)};
+			list.add(row);
 		}
 	}
 
@@ -294,6 +315,17 @@ public class BlinkyActivity extends AppCompatActivity {
 		if (!connected) {
 			led.setChecked(false);
 			buttonState.setText(R.string.button_unknown);
+		}
+	}
+
+	@Override
+	protected void onPause() {
+//		Log.i("myTag", "pauuussssssed");
+		sCSV.save(list);
+		super.onPause();
+
+		if (thread != null) {
+			thread.interrupt();
 		}
 	}
 }

@@ -1,6 +1,8 @@
 package com.example.mbreath.realtimeaccelerometer;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -9,7 +11,9 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
@@ -19,8 +23,10 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
-import com.github.mikephil.charting.utils.ColorTemplate;
+import com.github.mikephil.charting.utils.Utils;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
@@ -33,10 +39,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Thread thread;
     private boolean plotData = true;
 
+    private static final int REQUEST_ACCESS_STORAGE = 1022; // random number
+
+    String baseDir;
+    String fileName;
+    String filePath;
+    List<String[]> list;
+    File file;
+    SaveCSV sCSV;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_ACCESS_STORAGE);
+
+        baseDir = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
+        fileName = "AnalysisData.csv";
+        filePath = baseDir + File.separator + fileName;
+        list = new ArrayList<String[]>();
+        file = new File(filePath);
+        sCSV = new SaveCSV(file);
+
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
@@ -106,6 +131,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         feedMultiple();
 
+
+
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(final int requestCode,
+                                           @NonNull final String[] permissions,
+                                           @NonNull final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_ACCESS_STORAGE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED){
+
+            }
+        }
     }
 
     private void addEntry(SensorEvent event) {
@@ -122,6 +162,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 data.addDataSet(set);
             }
 
+            String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(event.values[0] + 5)};
+            list.add(row);
 //            data.addEntry(new Entry(set.getEntryCount(), (float) (Math.random() * 80) + 10f), 0);
             data.addEntry(new Entry(set.getEntryCount(), event.values[0] + 5), 0);
             data.notifyDataChanged();
@@ -135,6 +177,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             // move to the latest entry
             mChart.moveViewToX(data.getEntryCount());
+//            sCSV.save(list);
+
 
         }
     }
@@ -180,6 +224,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onPause() {
+        Log.i("myTag", "onPause called ...");
+        Log.i("myTag", "onPause called ..." + list.size());
+        Log.i("myTag", "onPause called ..." + list.get(0)[0]);
+        Log.i("myTag", "onPause called ..." + list.get(0)[1]);
+        sCSV.save(list);
+
         super.onPause();
 
         if (thread != null) {
@@ -211,8 +261,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onDestroy() {
+        Log.i("myTag", "onDestroy called ...");
         mSensorManager.unregisterListener(MainActivity.this);
         thread.interrupt();
         super.onDestroy();
     }
+
 }

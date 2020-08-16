@@ -21,7 +21,7 @@
   -->
 
 <resources>
-	<string name="app_name">nRF Blinky</string>
+	<string name="app_name">nRF Blinky 2</string>
 	<string name="feature_name">BLINKY</string>
 
 	<string name="menu_filter">Filter</string>

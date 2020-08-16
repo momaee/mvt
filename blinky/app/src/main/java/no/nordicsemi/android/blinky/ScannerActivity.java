@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -142,6 +143,7 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
                                            @NonNull final int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_ACCESS_FINE_LOCATION) {
+            Log.i("myTag", "granted");
             scannerViewModel.refresh();
         }
     }
@@ -163,7 +165,7 @@ public class ScannerActivity extends AppCompatActivity implements DevicesAdapter
         Utils.markLocationPermissionRequested(this);
         ActivityCompat.requestPermissions(
                 this,
-                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                 REQUEST_ACCESS_FINE_LOCATION);
     }
 
