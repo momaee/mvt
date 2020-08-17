@@ -21,7 +21,7 @@
   ~ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -->
 
-<manifest package="no.nordicsemi.android.blinky"
+<manifest package="no.nordicsemi.android.mvt_ppg"
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:tools="http://schemas.android.com/tools">
 
@@ -36,7 +36,7 @@
 		android:required="true"/>
 
 	<application
-		android:name=".BlinkyApplication"
+		android:name="no.nordicsemi.android.mvt_ppg.BlinkyApplication"
 		android:allowBackup="true"
 		android:fullBackupContent="true"
 		android:icon="@mipmap/ic_launcher"
@@ -45,7 +45,7 @@
 		android:theme="@style/AppTheme"
 		tools:ignore="GoogleAppIndexingWarning">
 		<activity
-			android:name=".SplashScreenActivity"
+			android:name="no.nordicsemi.android.mvt_ppg.SplashScreenActivity"
 			android:theme="@style/AppTheme.SplashScreen"
 			android:noHistory="true"
 			android:launchMode="singleTop">
@@ -55,7 +55,7 @@
 			</intent-filter>
 		</activity>
 		<activity
-			android:name=".ScannerActivity"
+			android:name="no.nordicsemi.android.mvt_ppg.ScannerActivity"
 			android:icon="@drawable/ic_blinky_feature"
 			android:label="@string/feature_name"
 			android:launchMode="singleTop">
@@ -65,9 +65,9 @@
 			</intent-filter>
 		</activity>
 		<activity
-			android:name=".BlinkyActivity"
+			android:name="no.nordicsemi.android.mvt_ppg.BlinkyActivity"
 			android:launchMode="singleTop"
-			android:parentActivityName=".ScannerActivity">
+			android:parentActivityName="no.nordicsemi.android.mvt_ppg.ScannerActivity">
 		</activity>
 
 	</application>

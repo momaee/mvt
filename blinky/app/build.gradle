@@ -5,11 +5,11 @@ android {
     buildToolsVersion '29.0.3'
 
     defaultConfig {
-        applicationId "no.nordicsemi.android.nrfblinky"
+        applicationId "no.nordicsemi.android.mvt"
         minSdkVersion 18
         targetSdkVersion 29
         versionCode 14
-        versionName "2.5.1"
+        versionName "1.0"
         resConfigs "en"
 
         vectorDrawables.useSupportLibrary = true
