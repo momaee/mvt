@@ -13,21 +13,15 @@ public class SaveCSV {
         this.file = file;
     }
     public void save(List<String[]> list){
-//        Log.i("myTag", "save");
         if(!file.exists()){
-//            Log.i("myTag", "file not exists");
             try {
                 file.createNewFile();
-//                Log.i("myTag", "create new file");
             } catch (IOException e) {
-//                Log.i("myTag", "couldn't create new file");
                 throw new RuntimeException("Unable to File " + e);
             }
         }
-//        Log.i("myTag", "file exists");
         try {
             FileWriter writer = new FileWriter(file);
-//            Log.i("myTag", "create new filewriter");
             for(int i = 0; i < list.size(); i++){
                 String[] row = list.get(i);
                 for(int j = 0; j < row.length; j++)
@@ -41,10 +35,12 @@ public class SaveCSV {
                     }
                 }
             }
+            if(list.size() == 0){
+                writer.write("null");
+            }
             writer.flush();
             writer.close();
         } catch (IOException e) {
-
             throw new RuntimeException("Unable to write to File " + e);
         }
     }

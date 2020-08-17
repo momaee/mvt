@@ -21,11 +21,11 @@
   -->
 
 <resources>
-	<string name="app_name">nRF Blinky 2</string>
-	<string name="feature_name">BLINKY</string>
+	<string name="app_name">Mvt</string>
+	<string name="feature_name">MVT</string>
 
 	<string name="menu_filter">Filter</string>
-	<string name="menu_filter_uuid">Only devices advertising LBS UUID</string>
+	<string name="menu_filter_uuid">Only devices advertising UART UUID</string>
 	<string name="menu_filter_nearby">Only nearby devices</string>
 
 	<string name="unknown_device">Unknown Device</string>

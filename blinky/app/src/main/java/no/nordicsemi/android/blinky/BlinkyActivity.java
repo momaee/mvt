@@ -24,13 +24,14 @@ package no.nordicsemi.android.blinky;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.hardware.SensorEvent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -64,20 +65,22 @@ public class BlinkyActivity extends AppCompatActivity {
 
 	private BlinkyViewModel viewModel;
 
-	@BindView(R.id.led_switch) SwitchMaterial led;
-	@BindView(R.id.button_state) TextView buttonState;
+//	@BindView(R.id.led_switch) SwitchMaterial led;
+//	@BindView(R.id.button_state) TextView buttonState;
 
 	private LineChart mChart;
 	private Thread thread;
 	private boolean plotData = true;
 
-	String baseDir;
-	String fileName;
-	String filePath;
-	List<String[]> list;
-	File file;
-	SaveCSV sCSV;
+	String baseDir = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
+	String fileName = "mvt.csv";
+	String filePath = baseDir + File.separator + fileName;
+	List<String[]> list = new ArrayList<String[]>();
+	File file = new File(filePath);
+	SaveCSV sCSV = new SaveCSV(file);
+	long start = java.lang.System.currentTimeMillis();
 
+	@RequiresApi(api = Build.VERSION_CODES.O)
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -100,13 +103,13 @@ public class BlinkyActivity extends AppCompatActivity {
 		viewModel.connect(device);
 
 		// Set up views.
-		final TextView ledState = findViewById(R.id.led_state);
+//		final TextView ledState = findViewById(R.id.led_state);
 		final LinearLayout progressContainer = findViewById(R.id.progress_container);
 		final TextView connectionState = findViewById(R.id.connection_state);
 		final View content = findViewById(R.id.device_container);
 		final View notSupported = findViewById(R.id.not_supported);
 
-		led.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.setLedState(isChecked));
+//		led.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.setLedState(isChecked));
 		viewModel.getConnectionState().observe(this, state -> {
 			switch (state.getState()) {
 				case CONNECTING:
@@ -136,66 +139,39 @@ public class BlinkyActivity extends AppCompatActivity {
 					break;
 			}
 		});
-		viewModel.getLedState().observe(this, isOn -> {
-			ledState.setText(isOn ? R.string.turn_on : R.string.turn_off);
-			led.setChecked(isOn);
-		});
-//		viewModel.getButtonState().observe(this,
-//				pressed -> buttonState.setText(pressed ?
-//						R.string.button_pressed : R.string.button_released));
-
+//		viewModel.getLedState().observe(this, isOn -> {
+//			ledState.setText(isOn ? R.string.turn_on : R.string.turn_off);
+//			led.setChecked(isOn);
+//		});
 		viewModel.getRxState().observe(this,
 				rxData -> {
 					if(plotData){
-
-//						for(int i = 0 ; i < rxData.length; i++)
-//						Log.i("rxTag", String.format("%02X ", ByteBuffer.wrap(rxData).getInt()));
-						Log.i("rxTag", String.valueOf((float)ByteBuffer.wrap(rxData).getInt()) );
-//						System.out.println(ByteBuffer.wrap(rxData).getFloat());
-
 						addEntry(rxData);
-
-//						Log.i("rxTag", ByteBuffer.wrap(rxData).getInt());
-
 						plotData = false;
 					}
 				});
 
-		baseDir = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
-		fileName = "AnalysisData.csv";
-		filePath = baseDir + File.separator + fileName;
-		list = new ArrayList<String[]>();
-		file = new File(filePath);
-		sCSV = new SaveCSV(file);
-
 		mChart = (LineChart) findViewById(R.id.chart1);
-
 		// enable description text
 		mChart.getDescription().setEnabled(true);
-
+		mChart.getDescription().setText("mvt project");
 		// enable touch gestures
 		mChart.setTouchEnabled(true);
-
 		// enable scaling and dragging
 		mChart.setDragEnabled(true);
 		mChart.setScaleEnabled(true);
 		mChart.setDrawGridBackground(false);
-
 		// if disabled, scaling can be done on x- and y-axis separately
 		mChart.setPinchZoom(true);
-
 		// set an alternative background color
 		mChart.setBackgroundColor(Color.WHITE);
-
 		LineData data = new LineData();
 		data.setValueTextColor(Color.BLACK);
 		data.setDrawValues(false);
 		// add empty data
 		mChart.setData(data);
-
 		// get the legend (only possible after setting data)
 		Legend l = mChart.getLegend();
-
 		// modify the legend ...
 		l.setForm(Legend.LegendForm.LINE);
 		l.setTextColor(Color.WHITE);
@@ -205,6 +181,7 @@ public class BlinkyActivity extends AppCompatActivity {
 		xl.setDrawGridLines(true);
 		xl.setAvoidFirstLastClipping(true);
 		xl.setEnabled(true);
+
 
 		YAxis leftAxis = mChart.getAxisLeft();
 		leftAxis.setTextColor(Color.BLACK);
@@ -220,19 +197,22 @@ public class BlinkyActivity extends AppCompatActivity {
 		mChart.getXAxis().setDrawGridLines(false);
 		mChart.setDrawBorders(false);
 
-		feedMultiple();
-
+		startChart();
 	}
 
 
 	private void addEntry(byte[] rxData) {
+
+		if(rxData.length != 5)
+			return;
+		if (rxData[4] != 13) //enter character
+			return;
 
 		LineData data = mChart.getData();
 
 		if (data != null) {
 
 			ILineDataSet set = data.getDataSetByIndex(0);
-			// set.addEntry(...); // can be called as well
 
 			if (set == null) {
 				set = createSet();
@@ -240,10 +220,10 @@ public class BlinkyActivity extends AppCompatActivity {
 			}
 			float tmp = (float)ByteBuffer.wrap(rxData).getInt();
 
-			if (0.9f * tmp < mChart.getAxisLeft().getAxisMinimum())
+			if (mChart.getAxisLeft().getAxisMinimum() > 0.9f * tmp || mChart.getAxisLeft().getAxisMinimum() < 0.05f * tmp )
 				mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
 
-			if (1.1f * tmp > mChart.getAxisLeft().getAxisMaximum())
+			if ( mChart.getAxisLeft().getAxisMaximum() < 1.1f * tmp || mChart.getAxisLeft().getAxisMaximum() > 20f * tmp)
 				mChart.getAxisLeft().setAxisMaximum(1.1f * tmp);
 
 			data.addEntry(new Entry(set.getEntryCount(),  tmp), 0);
@@ -259,7 +239,9 @@ public class BlinkyActivity extends AppCompatActivity {
 			// move to the latest entry
 			mChart.moveViewToX(data.getEntryCount());
 
-			String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(tmp)};
+			//store data to csv file
+			String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(java.lang.System.currentTimeMillis()-start),
+					String.valueOf(ByteBuffer.wrap(rxData).getInt()), String.valueOf(tmp)};
 			list.add(row);
 		}
 	}
@@ -268,17 +250,17 @@ public class BlinkyActivity extends AppCompatActivity {
 
 		LineDataSet set = new LineDataSet(null, "Dynamic Data");
 		set.setAxisDependency(YAxis.AxisDependency.LEFT);
-		set.setLineWidth(3f);
+		set.setLineWidth(2f);
 		set.setColor(Color.MAGENTA);
 		set.setHighlightEnabled(false);
 		set.setDrawValues(false);
 		set.setDrawCircles(false);
 		set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-		set.setCubicIntensity(0.2f);
+		set.setCubicIntensity(0.1f);
 		return set;
 	}
 
-	private void feedMultiple() {
+	private void startChart() {
 
 		if (thread != null){
 			thread.interrupt();
@@ -291,9 +273,7 @@ public class BlinkyActivity extends AppCompatActivity {
 				while (true){
 					plotData = true;
 					try {
-						Thread.sleep(10
-
-						);
+						Thread.sleep(5);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -311,19 +291,17 @@ public class BlinkyActivity extends AppCompatActivity {
 	}
 
 	private void onConnectionStateChanged(final boolean connected) {
-		led.setEnabled(connected);
-		if (!connected) {
-			led.setChecked(false);
-			buttonState.setText(R.string.button_unknown);
-		}
+//		led.setEnabled(connected);
+//		if (!connected) {
+//			led.setChecked(false);
+//			buttonState.setText(R.string.button_unknown);
+//		}
 	}
 
 	@Override
 	protected void onPause() {
-//		Log.i("myTag", "pauuussssssed");
 		sCSV.save(list);
 		super.onPause();
-
 		if (thread != null) {
 			thread.interrupt();
 		}
