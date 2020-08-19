@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" group="blinky/app" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/blinky.iml" filepath="$PROJECT_DIR$/.idea/modules/blinky.iml" group="blinky" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" group="blinky.bak/app" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/blinky.bak.iml" filepath="$PROJECT_DIR$/.idea/modules/blinky.bak.iml" group="blinky.bak" />
     </modules>
   </component>
 </project>

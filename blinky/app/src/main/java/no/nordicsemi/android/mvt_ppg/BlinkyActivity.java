@@ -26,6 +26,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -183,8 +184,8 @@ public class BlinkyActivity extends AppCompatActivity {
 		YAxis leftAxis = mChart.getAxisLeft();
 		leftAxis.setTextColor(Color.BLACK);
 		leftAxis.setDrawGridLines(false);
-		leftAxis.setAxisMaximum(10f);
-		leftAxis.setAxisMinimum(0f);
+		leftAxis.setAxisMaximum(30000f);
+		leftAxis.setAxisMinimum(-30000f);
 		leftAxis.setDrawGridLines(true);
 
 		YAxis rightAxis = mChart.getAxisRight();
@@ -200,10 +201,11 @@ public class BlinkyActivity extends AppCompatActivity {
 
 	private void addEntry(byte[] rxData) {
 
-		if(rxData.length != 5)
+		if(rxData.length != 5 && rxData.length != 4)
 			return;
-		if (rxData[4] != 13) //enter character
-			return;
+		if(rxData.length == 5)
+			if (rxData[4] != 13) //enter character
+				return;
 
 		LineData data = mChart.getData();
 
@@ -217,11 +219,17 @@ public class BlinkyActivity extends AppCompatActivity {
 			}
 			float tmp = (float)ByteBuffer.wrap(rxData).getInt();
 
-			if (mChart.getAxisLeft().getAxisMinimum() > 0.9f * tmp || mChart.getAxisLeft().getAxisMinimum() < 0.05f * tmp )
-				mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
-
-			if ( mChart.getAxisLeft().getAxisMaximum() < 1.1f * tmp || mChart.getAxisLeft().getAxisMaximum() > 20f * tmp)
-				mChart.getAxisLeft().setAxisMaximum(1.1f * tmp);
+//			if(tmp > 0){
+//				if ( mChart.getAxisLeft().getAxisMaximum() < 1.1f * tmp )
+//					mChart.getAxisLeft().setAxisMaximum(1.1f * tmp);
+//				if ( mChart.getAxisLeft().getAxisMinimum() > 0.9f * tmp )
+//					mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
+//			} else{
+//				if ( mChart.getAxisLeft().getAxisMaximum() < 0.9f * tmp )
+//					mChart.getAxisLeft().setAxisMaximum(0.9f * tmp);
+//				if ( mChart.getAxisLeft().getAxisMinimum() > 1.1f * tmp )
+//					mChart.getAxisLeft().setAxisMinimum(1.1f * tmp);
+//			}
 
 			data.addEntry(new Entry(set.getEntryCount(),  tmp), 0);
 			data.notifyDataChanged();
@@ -237,9 +245,27 @@ public class BlinkyActivity extends AppCompatActivity {
 			mChart.moveViewToX(data.getEntryCount());
 
 			//store data to csv file
-			String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(java.lang.System.currentTimeMillis()-start),
-					String.valueOf(ByteBuffer.wrap(rxData).getInt()), String.valueOf(tmp)};
-			list.add(row);
+//			String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(java.lang.System.currentTimeMillis()-start),
+//					String.valueOf(ByteBuffer.wrap(rxData).getInt()), String.valueOf(tmp)};
+//			list.add(row);
+
+//			if(tmp > 0){
+//				if ( mChart.getAxisLeft().getAxisMaximum() > 250f * tmp )
+////					mChart.getAxisLeft().setAxisMaximum(200f * tmp);
+//					mChart.getAxisLeft().setAxisMaximum(0.9f * mChart.getAxisLeft().getAxisMaximum());
+////				if ( mChart.getAxisLeft().getAxisMinimum() < 0.004f * tmp )
+//////					mChart.getAxisLeft().setAxisMinimum(0.005f * tmp);
+////					mChart.getAxisLeft().setAxisMinimum(1.1f * mChart.getAxisLeft().getAxisMinimum());
+//			}else{
+////				if ( mChart.getAxisLeft().getAxisMaximum() > 0.004f * tmp )
+//////					mChart.getAxisLeft().setAxisMaximum(0.005f * tmp);
+////					mChart.getAxisLeft().setAxisMaximum(1.1f * mChart.getAxisLeft().getAxisMaximum());
+//				if ( mChart.getAxisLeft().getAxisMinimum() < 250f * tmp )
+////					mChart.getAxisLeft().setAxisMinimum(200f * tmp);
+//					mChart.getAxisLeft().setAxisMinimum(0.9f * mChart.getAxisLeft().getAxisMinimum());
+//
+//			}
+//			mChart.notifyDataSetChanged();
 		}
 	}
 
@@ -247,13 +273,13 @@ public class BlinkyActivity extends AppCompatActivity {
 
 		LineDataSet set = new LineDataSet(null, "Dynamic Data");
 		set.setAxisDependency(YAxis.AxisDependency.LEFT);
-		set.setLineWidth(2f);
+		set.setLineWidth(3f);
 		set.setColor(Color.MAGENTA);
 		set.setHighlightEnabled(false);
 		set.setDrawValues(false);
 		set.setDrawCircles(false);
 		set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-		set.setCubicIntensity(0.1f);
+		set.setCubicIntensity(0.2f);
 		return set;
 	}
 
@@ -270,7 +296,7 @@ public class BlinkyActivity extends AppCompatActivity {
 				while (true){
 					plotData = true;
 					try {
-						Thread.sleep(5);
+						Thread.sleep(10);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
