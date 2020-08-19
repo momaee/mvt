@@ -129,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mChart.getXAxis().setDrawGridLines(false);
         mChart.setDrawBorders(false);
 
-        feedMultiple();
+//        feedMultiple();
 
 
 
@@ -162,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 data.addDataSet(set);
             }
 
-            String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(event.values[0] + 5)};
+            String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(event.values[0] + 5), String.valueOf(java.lang.System.currentTimeMillis())};
             list.add(row);
 //            data.addEntry(new Entry(set.getEntryCount(), (float) (Math.random() * 80) + 10f), 0);
             data.addEntry(new Entry(set.getEntryCount(), event.values[0] + 5), 0);
@@ -172,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             mChart.notifyDataSetChanged();
 
             // limit the number of visible entries
-            mChart.setVisibleXRangeMaximum(150);
+            mChart.setVisibleXRangeMaximum(250);
             // mChart.setVisibleYRange(30, AxisDependency.LEFT);
 
             // move to the latest entry
@@ -187,13 +187,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         LineDataSet set = new LineDataSet(null, "Dynamic Data");
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
-        set.setLineWidth(3f);
+        set.setLineWidth(2f);
         set.setColor(Color.MAGENTA);
         set.setHighlightEnabled(false);
         set.setDrawValues(false);
         set.setDrawCircles(false);
         set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        set.setCubicIntensity(0.2f);
+        set.setCubicIntensity(0.1f);
         return set;
     }
 
@@ -246,10 +246,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public final void onSensorChanged(SensorEvent event) {
-        if(plotData){
+//        if(plotData){
             addEntry(event);
-            plotData = false;
-        }
+//            plotData = false;
+//        }
     }
 
 
@@ -263,7 +263,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onDestroy() {
         Log.i("myTag", "onDestroy called ...");
         mSensorManager.unregisterListener(MainActivity.this);
-        thread.interrupt();
+        if (thread != null) {
+            thread.interrupt();
+        }
         super.onDestroy();
     }
 

@@ -48,6 +48,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import butterknife.ButterKnife;
@@ -71,12 +72,17 @@ public class BlinkyActivity extends AppCompatActivity {
 	private boolean plotData = true;
 
 	String baseDir = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
-	String fileName = "mvt.csv";
-	String filePath = baseDir + File.separator + fileName;
+	String fileName = "mvt";
+	String fileFormat = ".csv";
+	String filePath = baseDir + File.separator + fileName + new Date().toString() + fileFormat;
 	List<String[]> list = new ArrayList<String[]>();
 	File file = new File(filePath);
 	SaveCSV sCSV = new SaveCSV(file);
 	long start = java.lang.System.currentTimeMillis();
+	int max_x = 0;
+	float max_y = 0;
+	int min_x = 0;
+	float min_y = 0;
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
 	@Override
@@ -144,9 +150,12 @@ public class BlinkyActivity extends AppCompatActivity {
 		viewModel.getRxState().observe(this,
 				rxData -> {
 					if(plotData){
+						Log.i("myTag", "time" + String.valueOf(java.lang.System.currentTimeMillis()-start));
+						Log.i("myTag", "rx recived" + String.valueOf(ByteBuffer.wrap(rxData).getInt()));
 						addEntry(rxData);
 						plotData = false;
 					}
+//
 				});
 
 		mChart = (LineChart) findViewById(R.id.chart1);
@@ -184,8 +193,8 @@ public class BlinkyActivity extends AppCompatActivity {
 		YAxis leftAxis = mChart.getAxisLeft();
 		leftAxis.setTextColor(Color.BLACK);
 		leftAxis.setDrawGridLines(false);
-		leftAxis.setAxisMaximum(30000f);
-		leftAxis.setAxisMinimum(-30000f);
+		leftAxis.setAxisMaximum(300f);
+		leftAxis.setAxisMinimum(-300f);
 		leftAxis.setDrawGridLines(true);
 
 		YAxis rightAxis = mChart.getAxisRight();
@@ -219,53 +228,77 @@ public class BlinkyActivity extends AppCompatActivity {
 			}
 			float tmp = (float)ByteBuffer.wrap(rxData).getInt();
 
-//			if(tmp > 0){
-//				if ( mChart.getAxisLeft().getAxisMaximum() < 1.1f * tmp )
-//					mChart.getAxisLeft().setAxisMaximum(1.1f * tmp);
-//				if ( mChart.getAxisLeft().getAxisMinimum() > 0.9f * tmp )
-//					mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
-//			} else{
-//				if ( mChart.getAxisLeft().getAxisMaximum() < 0.9f * tmp )
-//					mChart.getAxisLeft().setAxisMaximum(0.9f * tmp);
-//				if ( mChart.getAxisLeft().getAxisMinimum() > 1.1f * tmp )
-//					mChart.getAxisLeft().setAxisMinimum(1.1f * tmp);
-//			}
-
 			data.addEntry(new Entry(set.getEntryCount(),  tmp), 0);
 			data.notifyDataChanged();
+
+			setAxisRange(tmp, set);
 
 			// let the chart know it's data has changed
 			mChart.notifyDataSetChanged();
 
 			// limit the number of visible entries
-			mChart.setVisibleXRangeMaximum(150);
+			mChart.setVisibleXRangeMaximum(200);
 			// mChart.setVisibleYRange(30, AxisDependency.LEFT);
 
 			// move to the latest entry
 			mChart.moveViewToX(data.getEntryCount());
 
 			//store data to csv file
-//			String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(java.lang.System.currentTimeMillis()-start),
-//					String.valueOf(ByteBuffer.wrap(rxData).getInt()), String.valueOf(tmp)};
-//			list.add(row);
+			String[] row = new String[]{String.valueOf(set.getEntryCount()), String.valueOf(java.lang.System.currentTimeMillis()-start),
+					String.valueOf(ByteBuffer.wrap(rxData).getInt()), String.valueOf(tmp)};
+			list.add(row);
+		}
+	}
 
-//			if(tmp > 0){
-//				if ( mChart.getAxisLeft().getAxisMaximum() > 250f * tmp )
-////					mChart.getAxisLeft().setAxisMaximum(200f * tmp);
-//					mChart.getAxisLeft().setAxisMaximum(0.9f * mChart.getAxisLeft().getAxisMaximum());
-////				if ( mChart.getAxisLeft().getAxisMinimum() < 0.004f * tmp )
-//////					mChart.getAxisLeft().setAxisMinimum(0.005f * tmp);
-////					mChart.getAxisLeft().setAxisMinimum(1.1f * mChart.getAxisLeft().getAxisMinimum());
-//			}else{
-////				if ( mChart.getAxisLeft().getAxisMaximum() > 0.004f * tmp )
-//////					mChart.getAxisLeft().setAxisMaximum(0.005f * tmp);
-////					mChart.getAxisLeft().setAxisMaximum(1.1f * mChart.getAxisLeft().getAxisMaximum());
-//				if ( mChart.getAxisLeft().getAxisMinimum() < 250f * tmp )
-////					mChart.getAxisLeft().setAxisMinimum(200f * tmp);
-//					mChart.getAxisLeft().setAxisMinimum(0.9f * mChart.getAxisLeft().getAxisMinimum());
-//
-//			}
-//			mChart.notifyDataSetChanged();
+	private void setAxisRange(float tmp, ILineDataSet set){
+		if(tmp > 0){
+			if ( mChart.getAxisLeft().getAxisMaximum() < 1.1f * tmp )
+				mChart.getAxisLeft().setAxisMaximum(1.1f * tmp);
+			if ( mChart.getAxisLeft().getAxisMinimum() > 0.9f * tmp )
+				mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
+		} else{
+			if ( mChart.getAxisLeft().getAxisMaximum() < 0.9f * tmp )
+				mChart.getAxisLeft().setAxisMaximum(0.9f * tmp);
+			if ( mChart.getAxisLeft().getAxisMinimum() > 1.1f * tmp )
+				mChart.getAxisLeft().setAxisMinimum(1.1f * tmp);
+		}
+
+		if (tmp > max_y){
+			max_y = tmp;
+			max_x = set.getEntryCount();
+		}
+		if(set.getEntryCount() - max_x > 250){
+			max_x = set.getEntryCount();
+			if (max_y > 0)
+				max_y = max_y/2;
+			else
+				max_y = max_y*2;
+		}
+		if(max_y > 0){
+			if(mChart.getAxisLeft().getAxisMaximum() > 3f * max_y )
+				mChart.getAxisLeft().setAxisMaximum(2 * max_y);
+		}else{
+			if(mChart.getAxisLeft().getAxisMaximum() > 0.3f * max_y )
+				mChart.getAxisLeft().setAxisMaximum(0.5f * max_y);
+		}
+
+		if(tmp < min_y){
+			min_x = set.getEntryCount();
+			min_y = tmp;
+		}
+		if(set.getEntryCount() - min_x > 250){
+			min_x = set.getEntryCount();
+			if (min_y < 0)
+				min_y = min_y/2;
+			else
+				min_y = min_y*2;
+		}
+		if(min_y < 0){
+			if ( mChart.getAxisLeft().getAxisMinimum() < 3f * min_y )
+				mChart.getAxisLeft().setAxisMinimum(2f * min_y);
+		}else {
+			if ( mChart.getAxisLeft().getAxisMinimum() < 0.3f * min_y )
+				mChart.getAxisLeft().setAxisMinimum(0.5f * min_y);
 		}
 	}
 
@@ -273,7 +306,7 @@ public class BlinkyActivity extends AppCompatActivity {
 
 		LineDataSet set = new LineDataSet(null, "Dynamic Data");
 		set.setAxisDependency(YAxis.AxisDependency.LEFT);
-		set.setLineWidth(3f);
+		set.setLineWidth(2f);
 		set.setColor(Color.MAGENTA);
 		set.setHighlightEnabled(false);
 		set.setDrawValues(false);

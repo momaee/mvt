@@ -34,6 +34,7 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import no.nordicsemi.android.ble.data.Data;
@@ -115,6 +116,7 @@ public class BlinkyManager extends ObservableBleManager {
 		public void onRxStateChanged(@NonNull final BluetoothDevice device,
 										 final byte[] data) {
 			log(LogContract.Log.Level.APPLICATION, "Rx " + data.toString());
+//			Log.i("myTag", "rx changed" + String.valueOf(ByteBuffer.wrap(data).getInt()));
 			rxState.setValue(data);
 		}
 
