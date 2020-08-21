@@ -26,6 +26,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -71,13 +72,14 @@ public class BlinkyActivity extends AppCompatActivity {
 	private Thread thread;
 	private boolean plotData = true;
 
-	String baseDir = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
-	String fileName = "mvt";
-	String fileFormat = ".csv";
-	String filePath = baseDir + File.separator + fileName + new Date().toString() + fileFormat;
-	List<String[]> list = new ArrayList<String[]>();
-	File file = new File(filePath);
-	SaveCSV sCSV = new SaveCSV(file);
+	String baseDir;
+	String fileName;
+	String fileFormat;
+	String filePath;
+	List<String[]> list;
+	File file;
+	SaveCSV sCSV;
+
 	long start = java.lang.System.currentTimeMillis();
 	int max_x = 0;
 	float max_y = 0;
@@ -88,6 +90,10 @@ public class BlinkyActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+//		Log.i("dirTag", "dir " + getExternalCacheDir());
+//		Log.i("dirTag", "dir " + getExternalFilesDir(null));
+//		Log.i("dirTag", "dir " + getFilesDir());
 		setContentView(R.layout.activity_blinky);
 		ButterKnife.bind(this);
 
@@ -101,6 +107,17 @@ public class BlinkyActivity extends AppCompatActivity {
 		toolbar.setSubtitle(deviceAddress);
 		setSupportActionBar(toolbar);
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+		baseDir = "mvtPath";
+		fileName = "mvt";
+		fileFormat = ".csv";
+		filePath = fileName + new Date().toString() + fileFormat;
+		list = new ArrayList<String[]>();
+		Log.i("myTag", "dir" + filePath);
+		file = new File(getExternalFilesDir(baseDir), filePath);
+		if (file.exists())
+			Log.i("myTag", "created");
+		sCSV = new SaveCSV(file);
 
 		// Configure the view model.
 		viewModel = new ViewModelProvider(this).get(BlinkyViewModel.class);
@@ -150,10 +167,10 @@ public class BlinkyActivity extends AppCompatActivity {
 		viewModel.getRxState().observe(this,
 				rxData -> {
 					if(plotData){
-						Log.i("myTag", "time" + String.valueOf(java.lang.System.currentTimeMillis()-start));
-						Log.i("myTag", "rx recived" + String.valueOf(ByteBuffer.wrap(rxData).getInt()));
+						Log.i("rxTag", "time" + String.valueOf(java.lang.System.currentTimeMillis()-start));
+						Log.i("rxTag", "rx recived" + String.valueOf(ByteBuffer.wrap(rxData).getInt()));
 						addEntry(rxData);
-						plotData = false;
+//						plotData = false;
 					}
 //
 				});
@@ -204,7 +221,7 @@ public class BlinkyActivity extends AppCompatActivity {
 		mChart.getXAxis().setDrawGridLines(false);
 		mChart.setDrawBorders(false);
 
-		startChart();
+//		startChart();
 	}
 
 
@@ -267,38 +284,38 @@ public class BlinkyActivity extends AppCompatActivity {
 			max_y = tmp;
 			max_x = set.getEntryCount();
 		}
-		if(set.getEntryCount() - max_x > 250){
+		if(set.getEntryCount() - max_x > 200){
 			max_x = set.getEntryCount();
 			if (max_y > 0)
 				max_y = max_y/2;
 			else
-				max_y = max_y*2;
+				max_y = max_y*2 + 0.001f;
 		}
 		if(max_y > 0){
 			if(mChart.getAxisLeft().getAxisMaximum() > 3f * max_y )
 				mChart.getAxisLeft().setAxisMaximum(2 * max_y);
 		}else{
 			if(mChart.getAxisLeft().getAxisMaximum() > 0.3f * max_y )
-				mChart.getAxisLeft().setAxisMaximum(0.5f * max_y);
+				mChart.getAxisLeft().setAxisMaximum(0.5f * max_y + 0.001f);
 		}
 
 		if(tmp < min_y){
 			min_x = set.getEntryCount();
 			min_y = tmp;
 		}
-		if(set.getEntryCount() - min_x > 250){
+		if(set.getEntryCount() - min_x > 200){
 			min_x = set.getEntryCount();
 			if (min_y < 0)
 				min_y = min_y/2;
 			else
-				min_y = min_y*2;
+				min_y = min_y*2 + 0.001f;
 		}
 		if(min_y < 0){
 			if ( mChart.getAxisLeft().getAxisMinimum() < 3f * min_y )
 				mChart.getAxisLeft().setAxisMinimum(2f * min_y);
 		}else {
 			if ( mChart.getAxisLeft().getAxisMinimum() < 0.3f * min_y )
-				mChart.getAxisLeft().setAxisMinimum(0.5f * min_y);
+				mChart.getAxisLeft().setAxisMinimum(0.5f * min_y + 0.001f);
 		}
 	}
 
