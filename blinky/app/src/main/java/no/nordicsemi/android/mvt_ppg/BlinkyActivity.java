@@ -85,15 +85,13 @@ public class BlinkyActivity extends AppCompatActivity {
 	float max_y = 0;
 	int min_x = 0;
 	float min_y = 0;
+	int max_visible_range = 200;
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-//		Log.i("dirTag", "dir " + getExternalCacheDir());
-//		Log.i("dirTag", "dir " + getExternalFilesDir(null));
-//		Log.i("dirTag", "dir " + getFilesDir());
 		setContentView(R.layout.activity_blinky);
 		ButterKnife.bind(this);
 
@@ -113,10 +111,7 @@ public class BlinkyActivity extends AppCompatActivity {
 		fileFormat = ".csv";
 		filePath = fileName + new Date().toString() + fileFormat;
 		list = new ArrayList<String[]>();
-		Log.i("myTag", "dir" + filePath);
 		file = new File(getExternalFilesDir(baseDir), filePath);
-		if (file.exists())
-			Log.i("myTag", "created");
 		sCSV = new SaveCSV(file);
 
 		// Configure the view model.
@@ -206,7 +201,6 @@ public class BlinkyActivity extends AppCompatActivity {
 		xl.setAvoidFirstLastClipping(true);
 		xl.setEnabled(true);
 
-
 		YAxis leftAxis = mChart.getAxisLeft();
 		leftAxis.setTextColor(Color.BLACK);
 		leftAxis.setDrawGridLines(false);
@@ -254,7 +248,7 @@ public class BlinkyActivity extends AppCompatActivity {
 			mChart.notifyDataSetChanged();
 
 			// limit the number of visible entries
-			mChart.setVisibleXRangeMaximum(200);
+			mChart.setVisibleXRangeMaximum(max_visible_range);
 			// mChart.setVisibleYRange(30, AxisDependency.LEFT);
 
 			// move to the latest entry
@@ -284,7 +278,7 @@ public class BlinkyActivity extends AppCompatActivity {
 			max_y = tmp;
 			max_x = set.getEntryCount();
 		}
-		if(set.getEntryCount() - max_x > 200){
+		if(set.getEntryCount() - max_x > max_visible_range){
 			max_x = set.getEntryCount();
 			if (max_y > 0)
 				max_y = max_y/2;
@@ -303,7 +297,7 @@ public class BlinkyActivity extends AppCompatActivity {
 			min_x = set.getEntryCount();
 			min_y = tmp;
 		}
-		if(set.getEntryCount() - min_x > 200){
+		if(set.getEntryCount() - min_x > max_visible_range){
 			min_x = set.getEntryCount();
 			if (min_y < 0)
 				min_y = min_y/2;
