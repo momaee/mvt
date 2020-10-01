@@ -14,15 +14,12 @@ public class SaveCSV {
     }
     public void save(List<String[]> list){
         if(!file.exists()){
-            Log.i("myTag", "not exists");
             try {
                 file.createNewFile();
             } catch (IOException e) {
                 throw new RuntimeException("Unable to File " + e);
             }
         }
-        Log.i("myTag", "exists");
-
         try {
             FileWriter writer = new FileWriter(file);
 
@@ -30,11 +27,10 @@ public class SaveCSV {
             writer.write(',');
             writer.write("time");
             writer.write(',');
-            writer.write("float_int");
+            writer.write("value_int");
             writer.write(',');
             writer.write("value_float");
-            writer.write(',');
-
+            writer.write('\n');
 
             for(int i = 0; i < list.size(); i++){
                 String[] row = list.get(i);
@@ -51,7 +47,6 @@ public class SaveCSV {
             }
             writer.flush();
             writer.close();
-            Log.i("myTag", " exists2");
         } catch (IOException e) {
             throw new RuntimeException("Unable to write to File " + e);
         }

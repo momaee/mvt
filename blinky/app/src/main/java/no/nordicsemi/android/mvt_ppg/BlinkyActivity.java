@@ -51,6 +51,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Vector;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -64,13 +65,7 @@ public class BlinkyActivity extends AppCompatActivity {
 	public static final String EXTRA_DEVICE = "no.nordicsemi.android.mvt_ppg.EXTRA_DEVICE";
 
 	private BlinkyViewModel viewModel;
-
-//	@BindView(R.id.led_switch) SwitchMaterial led;
-//	@BindView(R.id.button_state) TextView buttonState;
-
 	private LineChart mChart;
-	private Thread thread;
-	private boolean plotData = true;
 
 	String baseDir;
 	String fileName;
@@ -85,6 +80,19 @@ public class BlinkyActivity extends AppCompatActivity {
 	float max_y = 0;
 	int min_x = 0;
 	float min_y = 0;
+
+	int first_x = 0;
+	float first_y = 0;
+	int second_x = 0;
+	float second_y = 0;
+	int third_x = 0;
+	float third_y = 0;
+
+	Vector<Integer> maximums_x = new Vector<Integer>();
+	Vector<Float>  maximums_y = new Vector<Float>();
+	Vector<Integer>  minimums_x = new Vector<Integer>();
+	Vector<Float>  minimums_y = new Vector<Float>();
+
 	int max_visible_range = 200;
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
@@ -119,13 +127,11 @@ public class BlinkyActivity extends AppCompatActivity {
 		viewModel.connect(device);
 
 		// Set up views.
-//		final TextView ledState = findViewById(R.id.led_state);
 		final LinearLayout progressContainer = findViewById(R.id.progress_container);
 		final TextView connectionState = findViewById(R.id.connection_state);
 		final View content = findViewById(R.id.device_container);
 		final View notSupported = findViewById(R.id.not_supported);
 
-//		led.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.setLedState(isChecked));
 		viewModel.getConnectionState().observe(this, state -> {
 			switch (state.getState()) {
 				case CONNECTING:
@@ -155,21 +161,15 @@ public class BlinkyActivity extends AppCompatActivity {
 					break;
 			}
 		});
-//		viewModel.getLedState().observe(this, isOn -> {
-//			ledState.setText(isOn ? R.string.turn_on : R.string.turn_off);
-//			led.setChecked(isOn);
-//		});
 		viewModel.getRxState().observe(this,
 				rxData -> {
-					if(plotData){
-						Log.i("rxTag", "time" + String.valueOf(java.lang.System.currentTimeMillis()-start));
-						Log.i("rxTag", "rx recived" + String.valueOf(ByteBuffer.wrap(rxData).getInt()));
-						addEntry(rxData);
-//						plotData = false;
-					}
-//
+					addEntry(rxData);
 				});
 
+		chart_init();
+	}
+
+	private void chart_init(){
 		mChart = (LineChart) findViewById(R.id.chart1);
 		// enable description text
 		mChart.getDescription().setEnabled(true);
@@ -214,11 +214,9 @@ public class BlinkyActivity extends AppCompatActivity {
 		mChart.getAxisLeft().setDrawGridLines(true);
 		mChart.getXAxis().setDrawGridLines(false);
 		mChart.setDrawBorders(false);
-
-//		startChart();
 	}
 
-
+	// adding new entry to chart and csv file
 	private void addEntry(byte[] rxData) {
 
 		if(rxData.length != 5 && rxData.length != 4)
@@ -261,60 +259,120 @@ public class BlinkyActivity extends AppCompatActivity {
 		}
 	}
 
+	// setting axises range automatically
 	private void setAxisRange(float tmp, ILineDataSet set){
-		if(tmp > 0){
-			if ( mChart.getAxisLeft().getAxisMaximum() < 1.1f * tmp )
-				mChart.getAxisLeft().setAxisMaximum(1.1f * tmp);
-			if ( mChart.getAxisLeft().getAxisMinimum() > 0.9f * tmp )
-				mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
-		} else{
-			if ( mChart.getAxisLeft().getAxisMaximum() < 0.9f * tmp )
-				mChart.getAxisLeft().setAxisMaximum(0.9f * tmp);
-			if ( mChart.getAxisLeft().getAxisMinimum() > 1.1f * tmp )
-				mChart.getAxisLeft().setAxisMinimum(1.1f * tmp);
-		}
+		first_x = second_x;
+		first_y = second_y;
+		second_x = third_x;
+		second_y = third_y;
+		third_x = set.getEntryCount();
+		third_y = tmp;
 
-		if (tmp > max_y){
-			max_y = tmp;
-			max_x = set.getEntryCount();
+		if(second_y > first_y && second_y > third_y){
+			maximums_x.add(second_x);
+			maximums_y.add(second_y);
 		}
-		if(set.getEntryCount() - max_x > max_visible_range){
-			max_x = set.getEntryCount();
-			if (max_y > 0)
-				max_y = max_y/2;
-			else
-				max_y = max_y*2 + 0.001f;
+		if(second_y < first_y && second_y < third_y){
+			minimums_x.add(second_x);
+			minimums_y.add(second_y);
+		}
+		for (int i=minimums_x.size()-1; i >= 0; i--){
+			if(set.getEntryCount() - minimums_x.get(i) > max_visible_range){
+				minimums_x.remove(i);
+				minimums_y.remove(i);
+			}
+		}
+		for (int i=maximums_x.size()-1; i >= 0; i--){
+			if(set.getEntryCount() - maximums_x.get(i) > max_visible_range){
+				maximums_x.remove(i);
+				maximums_x.remove(i);
+			}
+		}
+		for(int i =0; i<minimums_y.size(); i++){
+			if(minimums_y.get(i) < min_y){
+				min_y = minimums_y.get(i);
+			}
+		}
+		for(int i=0; i<maximums_y.size(); i++){
+			if(maximums_y.get(i) > max_y){
+				max_y = maximums_y.get(i);
+			}
+
 		}
 		if(max_y > 0){
-			if(mChart.getAxisLeft().getAxisMaximum() > 3f * max_y )
-				mChart.getAxisLeft().setAxisMaximum(2 * max_y);
-		}else{
-			if(mChart.getAxisLeft().getAxisMaximum() > 0.3f * max_y )
-				mChart.getAxisLeft().setAxisMaximum(0.5f * max_y + 0.001f);
+			mChart.getAxisLeft().setAxisMaximum(1.1f * max_y);
+		} else {
+			mChart.getAxisLeft().setAxisMaximum(0.9f * max_y);
 		}
 
-		if(tmp < min_y){
-			min_x = set.getEntryCount();
-			min_y = tmp;
+		if(min_y > 0){
+			mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
+		} else {
+			mChart.getAxisLeft().setAxisMinimum(1.1f * tmp);
 		}
-		if(set.getEntryCount() - min_x > max_visible_range){
-			min_x = set.getEntryCount();
-			if (min_y < 0)
-				min_y = min_y/2;
-			else
-				min_y = min_y*2 + 0.001f;
-		}
-		if(min_y < 0){
-			if ( mChart.getAxisLeft().getAxisMinimum() < 3f * min_y )
-				mChart.getAxisLeft().setAxisMinimum(2f * min_y);
-		}else {
-			if ( mChart.getAxisLeft().getAxisMinimum() < 0.3f * min_y )
-				mChart.getAxisLeft().setAxisMinimum(0.5f * min_y + 0.001f);
-		}
+
+
+//		if(set.getEntryCount() == 1){
+//			min_y = tmp - 3000;
+//			max_y = tmp + 3000;
+//		}
+//
+//		// zoom out
+//		if(tmp > 0){
+//			if ( mChart.getAxisLeft().getAxisMaximum() < 1.1f * tmp )
+//				mChart.getAxisLeft().setAxisMaximum(1.1f * tmp);
+//			if ( mChart.getAxisLeft().getAxisMinimum() > 0.9f * tmp )
+//				mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
+//		} else{
+//			if ( mChart.getAxisLeft().getAxisMaximum() < 0.9f * tmp )
+//				mChart.getAxisLeft().setAxisMaximum(0.9f * tmp);
+//			if ( mChart.getAxisLeft().getAxisMinimum() > 1.1f * tmp )
+//				mChart.getAxisLeft().setAxisMinimum(1.1f * tmp);
+//		}
+//
+//		if (tmp > max_y){
+//			max_y = tmp;
+//			max_x = set.getEntryCount();
+//		}
+//		if(set.getEntryCount() - max_x > max_visible_range){
+//			max_x = set.getEntryCount();
+//			if (max_y > 0)
+//				max_y = max_y/3;
+//			else
+//				max_y = max_y*3 + 1f;
+//		}
+//		// zoom in -- decreasing maximum range
+//		if(max_y > 0){
+//			if(mChart.getAxisLeft().getAxisMaximum() > 3f * max_y )
+//				mChart.getAxisLeft().setAxisMaximum(2 * max_y);
+//		}else{
+//			if(mChart.getAxisLeft().getAxisMaximum() > 0.3f * max_y )
+//				mChart.getAxisLeft().setAxisMaximum(0.5f * max_y);
+//		}
+//
+//		if(tmp < min_y){
+//			min_x = set.getEntryCount();
+//			min_y = tmp;
+//		}
+//		if(set.getEntryCount() - min_x > max_visible_range){
+//			min_x = set.getEntryCount();
+//			if (min_y < 0)
+//				min_y = min_y/3;
+//			else
+//				min_y = min_y*3 + 1f;
+//		}
+//		// zoom in -- increasing minimum range
+//		if(min_y < 0){
+//			if ( mChart.getAxisLeft().getAxisMinimum() < 3f * min_y )
+//				mChart.getAxisLeft().setAxisMinimum(2f * min_y);
+//		}else {
+//			if ( mChart.getAxisLeft().getAxisMinimum() < 0.3f * min_y )
+//				mChart.getAxisLeft().setAxisMinimum(0.5f * min_y);
+//		}
 	}
 
+	// creating new data set for using in chart
 	private LineDataSet createSet() {
-
 		LineDataSet set = new LineDataSet(null, "Dynamic Data");
 		set.setAxisDependency(YAxis.AxisDependency.LEFT);
 		set.setLineWidth(2f);
@@ -327,50 +385,18 @@ public class BlinkyActivity extends AppCompatActivity {
 		return set;
 	}
 
-	private void startChart() {
-
-		if (thread != null){
-			thread.interrupt();
-		}
-
-		thread = new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				while (true){
-					plotData = true;
-					try {
-						Thread.sleep(10);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-		});
-
-		thread.start();
-	}
-
 	@OnClick(R.id.action_clear_cache)
 	public void onTryAgainClicked() {
 		viewModel.reconnect();
 	}
 
 	private void onConnectionStateChanged(final boolean connected) {
-//		led.setEnabled(connected);
-//		if (!connected) {
-//			led.setChecked(false);
-//			buttonState.setText(R.string.button_unknown);
-//		}
 	}
 
 	@Override
 	protected void onPause() {
+		// write csv file on disk
 		sCSV.save(list);
 		super.onPause();
-		if (thread != null) {
-			thread.interrupt();
-		}
 	}
 }

@@ -47,6 +47,9 @@ import no.nordicsemi.android.log.LogSession;
 import no.nordicsemi.android.log.Logger;
 
 public class BlinkyManager extends ObservableBleManager {
+	// this code is a template code from nordic sample codes. I replaced functions related to button, with my rx functions.
+	// there are functions for led controlling, I didn't use theme and let them remain. those codes cant be use for tx part, in future applications.
+
 	/** Nordic Blinky Service UUID. */
 //	public final static UUID LBS_UUID_SERVICE = UUID.fromString("00001523-1212-efde-1523-785feabcd123");
 	public final static UUID LBS_UUID_SERVICE = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
@@ -116,7 +119,6 @@ public class BlinkyManager extends ObservableBleManager {
 		public void onRxStateChanged(@NonNull final BluetoothDevice device,
 										 final byte[] data) {
 			log(LogContract.Log.Level.APPLICATION, "Rx " + data.toString());
-//			Log.i("myTag", "rx changed" + String.valueOf(ByteBuffer.wrap(data).getInt()));
 			rxState.setValue(data);
 		}
 
