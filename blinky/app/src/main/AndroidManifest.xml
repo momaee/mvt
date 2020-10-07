@@ -39,8 +39,8 @@
 		android:name="no.nordicsemi.android.mvt_ppg.BlinkyApplication"
 		android:allowBackup="true"
 		android:fullBackupContent="true"
-		android:icon="@mipmap/ic_launcher"
-		android:roundIcon="@mipmap/ic_launcher_round"
+		android:icon="@mipmap/ic_launcher_mypulses"
+		android:roundIcon="@mipmap/ic_launcher_mypulses_round"
 		android:label="@string/app_name"
 		android:theme="@style/AppTheme"
 		tools:ignore="GoogleAppIndexingWarning">

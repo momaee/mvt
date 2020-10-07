@@ -76,10 +76,6 @@ public class BlinkyActivity extends AppCompatActivity {
 	SaveCSV sCSV;
 
 	long start = java.lang.System.currentTimeMillis();
-	int max_x = 0;
-	float max_y = 0;
-	int min_x = 0;
-	float min_y = 0;
 
 	int first_x = 0;
 	float first_y = 0;
@@ -261,6 +257,9 @@ public class BlinkyActivity extends AppCompatActivity {
 
 	// setting axises range automatically
 	private void setAxisRange(float tmp, ILineDataSet set){
+		float max_y = (float) -1e9;
+		float min_y = (float) 1e9;
+
 		first_x = second_x;
 		first_y = second_y;
 		second_x = third_x;
@@ -285,7 +284,7 @@ public class BlinkyActivity extends AppCompatActivity {
 		for (int i=maximums_x.size()-1; i >= 0; i--){
 			if(set.getEntryCount() - maximums_x.get(i) > max_visible_range){
 				maximums_x.remove(i);
-				maximums_x.remove(i);
+				maximums_y.remove(i);
 			}
 		}
 		for(int i =0; i<minimums_y.size(); i++){
@@ -297,78 +296,18 @@ public class BlinkyActivity extends AppCompatActivity {
 			if(maximums_y.get(i) > max_y){
 				max_y = maximums_y.get(i);
 			}
-
 		}
 		if(max_y > 0){
-			mChart.getAxisLeft().setAxisMaximum(1.1f * max_y);
+			mChart.getAxisLeft().setAxisMaximum(1.05f * max_y);
 		} else {
-			mChart.getAxisLeft().setAxisMaximum(0.9f * max_y);
+			mChart.getAxisLeft().setAxisMaximum(0.95f * max_y);
 		}
 
 		if(min_y > 0){
-			mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
+			mChart.getAxisLeft().setAxisMinimum(0.95f * min_y);
 		} else {
-			mChart.getAxisLeft().setAxisMinimum(1.1f * tmp);
+			mChart.getAxisLeft().setAxisMinimum(1.05f * min_y);
 		}
-
-
-//		if(set.getEntryCount() == 1){
-//			min_y = tmp - 3000;
-//			max_y = tmp + 3000;
-//		}
-//
-//		// zoom out
-//		if(tmp > 0){
-//			if ( mChart.getAxisLeft().getAxisMaximum() < 1.1f * tmp )
-//				mChart.getAxisLeft().setAxisMaximum(1.1f * tmp);
-//			if ( mChart.getAxisLeft().getAxisMinimum() > 0.9f * tmp )
-//				mChart.getAxisLeft().setAxisMinimum(0.9f * tmp);
-//		} else{
-//			if ( mChart.getAxisLeft().getAxisMaximum() < 0.9f * tmp )
-//				mChart.getAxisLeft().setAxisMaximum(0.9f * tmp);
-//			if ( mChart.getAxisLeft().getAxisMinimum() > 1.1f * tmp )
-//				mChart.getAxisLeft().setAxisMinimum(1.1f * tmp);
-//		}
-//
-//		if (tmp > max_y){
-//			max_y = tmp;
-//			max_x = set.getEntryCount();
-//		}
-//		if(set.getEntryCount() - max_x > max_visible_range){
-//			max_x = set.getEntryCount();
-//			if (max_y > 0)
-//				max_y = max_y/3;
-//			else
-//				max_y = max_y*3 + 1f;
-//		}
-//		// zoom in -- decreasing maximum range
-//		if(max_y > 0){
-//			if(mChart.getAxisLeft().getAxisMaximum() > 3f * max_y )
-//				mChart.getAxisLeft().setAxisMaximum(2 * max_y);
-//		}else{
-//			if(mChart.getAxisLeft().getAxisMaximum() > 0.3f * max_y )
-//				mChart.getAxisLeft().setAxisMaximum(0.5f * max_y);
-//		}
-//
-//		if(tmp < min_y){
-//			min_x = set.getEntryCount();
-//			min_y = tmp;
-//		}
-//		if(set.getEntryCount() - min_x > max_visible_range){
-//			min_x = set.getEntryCount();
-//			if (min_y < 0)
-//				min_y = min_y/3;
-//			else
-//				min_y = min_y*3 + 1f;
-//		}
-//		// zoom in -- increasing minimum range
-//		if(min_y < 0){
-//			if ( mChart.getAxisLeft().getAxisMinimum() < 3f * min_y )
-//				mChart.getAxisLeft().setAxisMinimum(2f * min_y);
-//		}else {
-//			if ( mChart.getAxisLeft().getAxisMinimum() < 0.3f * min_y )
-//				mChart.getAxisLeft().setAxisMinimum(0.5f * min_y);
-//		}
 	}
 
 	// creating new data set for using in chart
